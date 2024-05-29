@@ -30,3 +30,5 @@ The testbench is self checking. As data words exit the DUT, destined for the DAC
 
 ![image](https://github.com/forrestblee/as_axis_mux/assets/3317623/a1c07a98-7d50-4be2-921c-20fcb2f15f5f)
 
+# Build
+The project can be built by opening Vivado and running the tcl script contained in the base folder, from the GUI we can run the simulation. It might only work in the current Vivado version I have installed (2023.1) since Vivado loves doing that.  
