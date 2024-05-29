@@ -22,6 +22,8 @@ The testbench is fully hand coded with each 32-bit dword treated as a single tra
 
 ![as_axis_mux drawio](https://github.com/forrestblee/as_axis_mux/assets/3317623/3163ec47-a671-48a3-ab3d-39a76b4fe365)
 
+Bursts are randomly generated using std::randomize and burst length ranges from 32 dwords to 2048 dwords. dac_sel is also randomized in the fork portion of the testbench. Built-in constrained randomized delays are also built in, to ensure corner cases are all hit using this one-size-fits all testcase. 
+
 When bursts are sent to the DUT, the testbench dynamically queues all dwords in the appropriate queue in FIFO order, based on the state of dac_sel and an internal status tracking round-robin. 
 
 As data words exit the DUT, destined for the DACs (minimally modelled), they are compared with the corresponding data word stored in the queue, which should match. The comparators log the DAC index, value, and any errors observed in the simulation log. A waveform diagram is included for thoroughness.  
