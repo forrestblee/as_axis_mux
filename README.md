@@ -39,5 +39,12 @@ The testbench is self checking. As data words exit the DUT, destined for the DAC
 ![image](https://github.com/forrestblee/as_axis_mux/assets/3317623/dc4dff19-f904-45c2-9e29-ca372600677b)
 An example with toggling source tvalid, where the design maintains continuous "burstiness" on the DAC output side. 
 
+**Notes**
+The testbench is lacking structures to ensure: 
+- ordering of DAC outputs (the correct data could make it to the correct DACs in the incorrect order, and the TB would not signal error)
+- continuous-ness of DAC outputs
+
+These could be checked with better modelling (1) and SV Assertions (2).
+
 # Build
 The project can be built by opening Vivado and running the tcl script contained in the base folder, from the GUI we can run the simulation. It might only work in the current Vivado version I have installed (2023.1) since Vivado loves doing that.  
