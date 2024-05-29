@@ -30,8 +30,6 @@ module beam_mux #(
    STATE state, next_state;
    
    // AXIS variables
-   logic[DWIDTH-1:0] axis_dac_tdata_buffer;
-   logic             axis_dac_tvalid_buffer;
    logic             S_source_burst_active;
    logic             S_source_burst_end;
 
@@ -50,6 +48,9 @@ module beam_mux #(
    
    assign S_source_burst_active = (axis_S_source_tready & axis_S_source_tvalid);
    assign S_source_burst_end =   (S_source_burst_active & axis_S_source_tlast);
+
+   // AXIS data handler ///////////////////////////////////////////////////////
+   assign axis_S_source_tready = ~rst && (dac_buffer_wr_ptr != (dac_buffer_rd_ptr - 1'b1)); // receive data if buffer is not full
 
    // FIFO CONTROL ////////////////////////////////////////////////////////////
    // FIFO IN
@@ -217,32 +218,6 @@ module beam_mux #(
    end
 
 
-   // AXIS data handler ///////////////////////////////////////////////////////
-   assign axis_S_source_tready = ~rst && (dac_buffer_wr_ptr != (dac_buffer_rd_ptr - 1'b1)); // receive data if buffer is not full
-
-   // we buffer the data because the state machine incurs a single clock delay 
-   always @(posedge clk)
-   begin
-      if (rst)
-      begin
-         axis_dac_tdata_buffer <= '0;
-         axis_dac_tvalid_buffer <= 1'b0;
-      end
-      else 
-      begin
-         if (S_source_burst_active)
-         begin
-            axis_dac_tdata_buffer <= axis_S_source_tdata;
-            axis_dac_tvalid_buffer <= axis_S_source_tvalid;
-         end
-         else
-         begin
-            axis_dac_tdata_buffer <= '0;
-            axis_dac_tvalid_buffer <= 1'b0;
-         end
-      end
-   end
-   ////////////////////////////////////////////////////////////////////////////
 
 endmodule: beam_mux
   
