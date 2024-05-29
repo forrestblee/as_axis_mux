@@ -99,7 +99,7 @@ module beam_mux_tb;
          expected_rr_channel = expected_rr_channel.next;
    end
 
-   // monitor received channel data collection
+   // scoreboard received channel data collection
    always begin
       @(posedge clk) begin
          if (axis_S_dac1_tvalid) begin
