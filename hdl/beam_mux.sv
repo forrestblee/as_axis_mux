@@ -35,11 +35,12 @@ module beam_mux #(
    logic             S_source_burst_active;
    logic             S_source_burst_end;
 
+   // data FIFO to store full packet transactions
    logic[DWIDTH-1:0] dac_data_buffer [0:MAX_DEPTH-1]; // TODO: replace with block ram
    logic [$clog2(MAX_DEPTH)-1:0] dac_buffer_wr_ptr;
    logic [$clog2(MAX_DEPTH)-1:0] dac_buffer_rd_ptr;
 
-   // read out queue
+   // read out queue - side band data to track contents of buffer
    TMODE dac_trans_idx_queue [0:MAX_DEPTH-1];   // probably fine to be logic, but should be block ram
    logic [15:0] dac_trans_size [0:MAX_DEPTH-1]; 
    logic [15:0] current_wr_trans_size;
@@ -91,8 +92,8 @@ module beam_mux #(
          dac_tqueue_rd_ptr <= '0;
          current_rd_trans_size <= '0;
       end
-      else begin // transaction to DACs is queued up
-         if (dac_tqueue_rd_ptr != dac_tqueue_wr_ptr) begin
+      else begin 
+         if (dac_tqueue_rd_ptr != dac_tqueue_wr_ptr) begin // if packet transaction to DACs is queued up
             case (dac_trans_idx_queue [dac_tqueue_rd_ptr])
                DAC1: begin
                   axis_M_dac1_tdata  <= dac_data_buffer[dac_buffer_rd_ptr];
@@ -122,10 +123,11 @@ module beam_mux #(
             // in all cases
             dac_buffer_rd_ptr <= dac_buffer_rd_ptr + 1'b1; // increment buffer pointer
 
-            if (current_rd_trans_size < dac_trans_size[dac_tqueue_rd_ptr])
+            
+            if (current_rd_trans_size < dac_trans_size[dac_tqueue_rd_ptr]) // increment "packets sent out register"
                current_rd_trans_size <= current_rd_trans_size + 1'b1;
-            else begin
-               dac_tqueue_rd_ptr <= dac_tqueue_rd_ptr + 1'b1;
+            else begin // packet transaction has been completed
+               dac_tqueue_rd_ptr <= dac_tqueue_rd_ptr + 1'b1; // next packet transaction
                current_rd_trans_size <= '0;
             end
          end
@@ -140,7 +142,7 @@ module beam_mux #(
       end
    end
 
-      
+   ////////////////////////////////////////////////////////////////////////////    
 
 
    // STATE state machine /////////////////////////////////////////////////////
@@ -240,145 +242,6 @@ module beam_mux #(
          end
       end
    end
-   ////////////////////////////////////////////////////////////////////////////
-
-   // // AXIS combo logic data mux ///////////////////////////////////////////////
-   // // this minimizes clock delay between the source, the mux, and the DACs
-
-   // // however, AXI protocol in general encourages signals to be registered and not the result of combinational logic 
-   // // if adherence to this rule is preferred, we can increase the clock delay to two and use the sequential logic (commented out below).
-   // always_comb begin
-   //    // default values
-   //    axis_M_dac1_tdata = '0;
-   //    axis_M_dac1_tvalid = 1'b0;
-   //    axis_M_dac2_tdata = '0;
-   //    axis_M_dac2_tvalid = 1'b0;
-   //    axis_M_dac3_tdata = '0;
-   //    axis_M_dac3_tvalid = 1'b0;
-
-   //    if (state == RECEIVING || state == LAST_TRANS)
-   //       case (trans_mode)
-   //          DAC1: begin
-   //             axis_M_dac1_tdata = axis_dac_tdata_buffer;
-   //             axis_M_dac1_tvalid = axis_dac_tvalid_buffer;
-   //          end
-   //          DAC2: begin
-   //             axis_M_dac2_tdata = axis_dac_tdata_buffer;
-   //             axis_M_dac2_tvalid = axis_dac_tvalid_buffer;
-   //          end
-   //          DAC3: begin
-   //             axis_M_dac3_tdata = axis_dac_tdata_buffer;
-   //             axis_M_dac3_tvalid = axis_dac_tvalid_buffer;
-   //          end
-   //          ROUNDROBIN: 
-   //             case (roundrobin_sel)
-   //                3'b001:
-   //                begin
-   //                   axis_M_dac1_tdata = axis_dac_tdata_buffer;
-   //                   axis_M_dac1_tvalid = axis_dac_tvalid_buffer;
-   //                end
-   //                3'b010:
-   //                begin
-   //                   axis_M_dac2_tdata = axis_dac_tdata_buffer;
-   //                   axis_M_dac2_tvalid = axis_dac_tvalid_buffer;
-   //                end
-   //                3'b100:
-   //                begin
-   //                   axis_M_dac3_tdata = axis_dac_tdata_buffer;
-   //                   axis_M_dac3_tvalid = axis_dac_tvalid_buffer;
-   //                end
-   //                   // default: 
-   //                   // error state
-   //             endcase
-   //       endcase
-   // end
-
-   // always @(posedge clk) begin
-   //    if (rst) begin
-   //       state_dly1 <= IDLE;
-   //       trans_mode_dly1 <= ROUNDROBIN;
-   //       roundrobin_sel_dly1 <= 3'b001;
-
-   //       axis_M_dac1_tdata <= '0;
-   //       axis_M_dac1_tvalid <= 1'b0;
-   //       axis_M_dac2_tdata <= '0;
-   //       axis_M_dac2_tvalid <= 1'b0;
-   //       axis_M_dac3_tdata <= '0;
-   //       axis_M_dac3_tvalid <= 1'b0;
-   //    end
-   //    else begin
-
-   //       if (state == RECEIVING || state == LAST_TRANS) begin
-   //          case (trans_mode)
-   //             DAC1: begin
-   //                axis_M_dac1_tdata <= axis_dac_tdata_buffer;
-   //                axis_M_dac1_tvalid <= axis_dac_tvalid_buffer;
-   //                axis_M_dac2_tdata <= '0;
-   //                axis_M_dac2_tvalid <= 1'b0;
-   //                axis_M_dac3_tdata <= '0;
-   //                axis_M_dac3_tvalid <= 1'b0;
-   //             end
-   //             DAC2: begin
-   //                axis_M_dac1_tdata <= '0;
-   //                axis_M_dac1_tvalid <= 1'b0;
-   //                axis_M_dac2_tdata <= axis_dac_tdata_buffer;
-   //                axis_M_dac2_tvalid <= axis_dac_tvalid_buffer;
-   //                axis_M_dac3_tdata <= '0;
-   //                axis_M_dac3_tvalid <= 1'b0;
-   //             end
-   //             DAC3: begin
-   //                axis_M_dac1_tdata <= '0;
-   //                axis_M_dac1_tvalid <= 1'b0;
-   //                axis_M_dac2_tdata <= '0;
-   //                axis_M_dac2_tvalid <= 1'b0;
-   //                axis_M_dac3_tdata <= axis_dac_tdata_buffer;
-   //                axis_M_dac3_tvalid <= axis_dac_tvalid_buffer;
-   //             end
-   //             ROUNDROBIN: 
-   //                case (roundrobin_sel)
-   //                   3'b001: // DAC1
-   //                   begin
-   //                      axis_M_dac1_tdata <= axis_dac_tdata_buffer;
-   //                      axis_M_dac1_tvalid <= axis_dac_tvalid_buffer;
-   //                      axis_M_dac2_tdata <= '0;
-   //                      axis_M_dac2_tvalid <= 1'b0;
-   //                      axis_M_dac3_tdata <= '0;
-   //                      axis_M_dac3_tvalid <= 1'b0;
-   //                   end
-   //                   3'b010: // DAC2
-   //                   begin
-   //                      axis_M_dac1_tdata <= '0;
-   //                      axis_M_dac1_tvalid <= 1'b0;
-   //                      axis_M_dac2_tdata <= axis_dac_tdata_buffer;
-   //                      axis_M_dac2_tvalid <= axis_dac_tvalid_buffer;
-   //                      axis_M_dac3_tdata <= '0;
-   //                      axis_M_dac3_tvalid <= 1'b0;
-   //                   end
-   //                   3'b100: // DAC3
-   //                   begin
-   //                      axis_M_dac1_tdata <= '0;
-   //                      axis_M_dac1_tvalid <= 1'b0;
-   //                      axis_M_dac2_tdata <= '0;
-   //                      axis_M_dac2_tvalid <= 1'b0;
-   //                      axis_M_dac3_tdata <= axis_dac_tdata_buffer;
-   //                      axis_M_dac3_tvalid <= axis_dac_tvalid_buffer;
-   //                   end
-   //                      // default: 
-   //                      // error state
-   //                endcase
-   //          endcase
-   //       end
-   //       else begin
-   //          axis_M_dac1_tdata <= '0;
-   //          axis_M_dac1_tvalid <= 1'b0;
-   //          axis_M_dac2_tdata <= '0;
-   //          axis_M_dac2_tvalid <= 1'b0;
-   //          axis_M_dac3_tdata <= '0;
-   //          axis_M_dac3_tvalid <= 1'b0;
-   //       end
-   //    end
-   // end
-
    ////////////////////////////////////////////////////////////////////////////
 
 endmodule: beam_mux
