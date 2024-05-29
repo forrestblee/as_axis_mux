@@ -31,6 +31,7 @@ task generate_patterns;
    input int n_samples;
 
    c_input_data datum;
+   int random_delay;
    datum = new();
    for (int i = 0; i < n_samples; i++)
    begin
@@ -38,12 +39,26 @@ task generate_patterns;
       @(posedge clk)
       axis_M_mod_tdata <= datum.modulator_data;
       // axis_M_mod_tdata <= (dac_sel << 8) | i; // for debugging
-      axis_M_mod_tvalid <= 1'b1;
+      
+      std::randomize(random_delay) with { random_delay < 3; random_delay >= 0; };
+      if (random_delay > 0) begin
+         axis_M_mod_tvalid <= 1'b0; 
+         repeat (random_delay) begin
+            @(posedge clk)
+               axis_M_mod_tvalid <= 1'b0; 
+         end
+         @(posedge clk)
+            axis_M_mod_tvalid <= 1'b1;
+      end
+      else begin
+         axis_M_mod_tvalid <= 1'b1;
+      end
       if (i == n_samples-1)
          axis_M_mod_tlast <= 1'b1;
       else 
          axis_M_mod_tlast <= 1'b0;
       wait(axis_M_mod_tready);
+      
    end
 endtask
 
@@ -85,9 +100,10 @@ task basic_randomized_test;
    repeat(n_transactions) begin
       // assert (std::randomize(num_pulses) with {num_pulses <= 65536; num_pulses >= 1024; ;}); // this took too much of a load on my computer - unless I was meant to assume "samples" meant bytes and not datawords ()
       assert (std::randomize(num_pulses) with {num_pulses <= 2048; num_pulses >= 32;});
+      // assert (std::randomize(num_pulses) with {num_pulses <= 10; num_pulses >= 4;});
       generate_patterns(num_pulses);
       
-      assert (std::randomize(random_delay) with { random_delay < 20; random_delay >= 0; });
+      assert (std::randomize(random_delay) with { random_delay < 15; random_delay >= 0; });
       if (random_delay > 0)
          generate_idle();
       #(random_delay * CLK_PERIOD_NS * 1ns);
