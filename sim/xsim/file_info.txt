@@ -1,0 +1,3 @@
+beam_mux.sv,systemverilog,xil_defaultlib,../hdl/beam_mux.sv,
+beam_mux_tb.sv,systemverilog,xil_defaultlib,../tb/beam_mux_tb.sv,
+glbl.v,Verilog,xil_defaultlib,glbl.v

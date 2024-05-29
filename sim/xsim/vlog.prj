@@ -1,0 +1,8 @@
+sv xil_defaultlib  \
+"../hdl/beam_mux.sv" \
+"../tb/beam_mux_tb.sv" \
+
+verilog xil_defaultlib "glbl.v"
+
+# Do not sort compile order
+nosort
