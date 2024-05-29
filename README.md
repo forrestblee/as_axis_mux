@@ -26,9 +26,10 @@ Bursts are randomly generated using functions represented in the diagram by Modu
 
 When bursts are sent to the DUT, the testbench dynamically queues all dwords in the appropriate queue in FIFO order, based on the state of dac_sel and internal status logic tracking round-robin. 
 
-The testbench is self checking. As data words exit the DUT, destined for the DACs (minimally modelled), they are compared with the corresponding data word stored in the queue, which should match. The comparators log the DAC index, value, and any errors observed in the simulation log. An example waveform diagram and simulation log is included.  
+The testbench is self checking. As data words exit the DUT, destined for the DACs (minimally modelled), they are compared with the corresponding data word stored in the queue, which should match. The comparators log the DAC index, value, and any errors observed in the simulation log. An example waveform diagram and simulation log is included. Simulation was done with xsim in Vivado but since there are no IP dependencies it should run on any sim without any additional work.  
 
 ![image](https://github.com/forrestblee/as_axis_mux/assets/3317623/a1c07a98-7d50-4be2-921c-20fcb2f15f5f)
+![image](https://github.com/forrestblee/as_axis_mux/assets/3317623/75c72996-0fa4-4e7c-8929-0e6bafd99be8)
 
 # Build
 The project can be built by opening Vivado and running the tcl script contained in the base folder, from the GUI we can run the simulation. It might only work in the current Vivado version I have installed (2023.1) since Vivado loves doing that.  
