@@ -7,17 +7,23 @@
 dac_sel selects which of 4 operating modes the MUX will operate in: Round Robin, DAC1 only, DAC2 only, or DAC3 only. The AXI-S implementation at the source implements tready and tlast, and at the DAC output only the bare minimum tdata and tvalid are implemented. 
 The mux operation is state machine based, with state machine input as dac_sel. 
 
+Packets are stored in a large FIFO, alongside side band data indicating which DAC should receive the data (based on state of dac_sel captured at start of source AXI-S transaction), and how many bursts the packet is. 
+Output data is transmitted continuously on a per-DAC basis. 
+
 **Performance**
 
-As long as the source input and the Beam Mux are operating at the same clock rate, there is no need for any backpressure from the MUX to the source. However, backpressure is implemented regardless due to FIFO best practice.
+As long as the source input and the Beam Mux are operating at the same clock rate, there is no need theoretically for any backpressure from the MUX to the source. However, backpressure is implemented regardless due to FIFO best practice.
 
-The new version which buffers the full transactions before sending has a 2 clock cycle delay from the final TLAST pulse. However, there may be data in queue being transmitted that would ultimate delay the transaction further. 
+
+The new version (which buffers the full transactions before sending) has a 2 clock cycle delay from the final TLAST pulse. However, there may be data in queue being transmitted that would ultimate delay the transaction further. 
 ~~The Beam Mux has a clock delay of one clock. As a caveat, this implementation violates the AXI spec "suggestion" for all AXI outputs to be registered. There is a commented out version that registers the outputs, which increases the clock delay to two.~~
 
 **Notes**
 
 UPDATE: transactional model was implemented to accomodate continuous burst at output. 
 ~~Possible improvements include simplifying state machine logic: the state machine selecting which DAC is output to could be replaced by a transaction based model, deciding which DAC by registering dac_sel alongside the first AXI burst. However, this would have been complicated if the source AXI-stream was capable of sparse transactions - that is, if tvalid did not pulse for the full duration of the burst. I made the assumption that the source was allowed to pause and restart the transaction mid-burst.~~
+
+The FIFO would have to be inferred or instantiated as block RAM in order to synthesize, rather than be implemented in FF logic. 
 
 # Testbench
 The testbench is fully hand coded with each 32-bit dword treated as a single transaction, since the DACs do not receive a tlast - it would not be possible to differentiate bursts.
