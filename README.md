@@ -26,4 +26,7 @@ Bursts are randomly generated using functions represented in the diagram by Modu
 
 When bursts are sent to the DUT, the testbench dynamically queues all dwords in the appropriate queue in FIFO order, based on the state of dac_sel and internal status logic tracking round-robin. 
 
-As data words exit the DUT, destined for the DACs (minimally modelled), they are compared with the corresponding data word stored in the queue, which should match. The comparators log the DAC index, value, and any errors observed in the simulation log. A waveform diagram is included for thoroughness.  
+The testbench is self checking. As data words exit the DUT, destined for the DACs (minimally modelled), they are compared with the corresponding data word stored in the queue, which should match. The comparators log the DAC index, value, and any errors observed in the simulation log. An example waveform diagram and simulation log is included.  
+
+![image](https://github.com/forrestblee/as_axis_mux/assets/3317623/a1c07a98-7d50-4be2-921c-20fcb2f15f5f)
+
